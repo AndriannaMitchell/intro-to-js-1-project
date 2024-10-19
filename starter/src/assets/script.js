@@ -16,7 +16,7 @@ const products = [
   },
   {
       name: 'Strawberry',
-      price: 4.00,
+      price: 4.23,
       quantity: 0,
       productId: 3,
       image: './images/strawberry.jpg',
@@ -26,17 +26,24 @@ const products = [
 // Declare an empty array for the cart
 const cart = [];
 
-// Function to add a product to the cart
+// Helper function to get product by ID
+function getProductById(productId, list) {
+  return list.find(item => item.productId === productId);
+}
+
+// Refactored addProductToCart using helper function
 function addProductToCart(productId) {
-  const product = products.find(item => item.productId === productId);
+  const product = getProductById(productId, products);
   if (product) {
-      product.quantity += 1; // Increase product quantity
-      const cartProduct = cart.find(item => item.productId === productId);
-      if (!cartProduct) {
-          cart.push({...product}); // Push a copy of the product to the cart
-      }
+    product.quantity += 1; // Increase product quantity
+    const cartProduct = getProductById(productId, cart);
+    if (!cartProduct) {
+      cart.push(product); // Push the product reference into the cart
+    }
   }
 }
+
+
 
 // Function to increase product quantity in the cart
 function increaseQuantity(productId) {
@@ -61,16 +68,16 @@ function decreaseQuantity(productId) {
 function removeProductFromCart(productId) {
   const productIndex = cart.findIndex(item => item.productId === productId);
   if (productIndex > -1) {
-      cart[productIndex].quantity = 0; // Set quantity to 0
+      cart[productIndex].quantity = 0; 
       cart.splice(productIndex, 1); // Remove product from cart
   }
 }
 
 // Function to calculate the total cost of products in the cart
 function cartTotal() {
-  return cart.reduce((total, item) => {
-      return total + (item.price * item.quantity);
-  }, 0).toFixed(2); // Return total cost rounded to 2 decimal places
+  return Math.round(cart.reduce((total, item) => {
+    return total + (item.price * item.quantity) * 100; 
+  }, 0)) / 100; 
 }
 
 // Function to empty the cart
@@ -79,11 +86,29 @@ function emptyCart() {
   products.forEach(product => product.quantity = 0); // Reset product quantities
 }
 
+let totalPaid = 0; // Variable to track total amount paid
+
 // Function to process payment
 function pay(amount) {
-  const totalCost = parseFloat(cartTotal());
-  const cashReturn = amount - totalCost;
-  return parseFloat(cashReturn.toFixed(2)); // Return rounded cash return
+  const totalCost = cartTotal(); // Get the total cost of the cart
+  totalPaid += amount; // Update total paid with the new amount
+  
+  let remaining = totalPaid - totalCost; // Calculate remaining balance
+
+  if (remaining >= 0) {
+    // If payment is sufficient, empty the cart and reset totalPaid
+    emptyCart();
+    totalPaid = 0; // Reset total paid after successful payment
+    return remaining; // Return change (if any)
+  } else {
+    // If not enough, return the negative remaining balance
+    return remaining; // Indicate how much more is needed
+  }
+}
+
+// Helper function to empty the cart after successful payment
+function emptyCart() {
+  cart.length = 0; // Clear the cart by setting its length to 0
 }
 
 // Export necessary functions and data for use in front.js
